@@ -18,73 +18,77 @@ Parameters:
     MaxLength: 64
     AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*" # Start with a letter, alphanumeric characters only
   DatabaseUser:
-		Type: String
-		Default: moodledude
-		MinLength: 8
-		MaxLength: 16
-		AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*" # Start with a letter, alphanumeric characters only
-	DatabasePassword:
-		Type: String
-		Default: moodledudepassword
-		MinLength: 8
-		MaxLength: 41
-		NoEcho: true
-		AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*" # Start with a letter, alphanumeric Characters only
+    Type: String
+    Default: moodledude
+    MinLength: 8
+    MaxLength: 16
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*" # Start with a letter, alphanumeric characters only
+  DatabasePassword:
+    Type: String
+    Default: moodledudepassword
+    MinLength: 8
+    MaxLength: 41
+    NoEcho: true
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*" # Start with a letter, alphanumeric Characters only
+  KeyPair:
+    Type: String
+    Default: ""
+    Description: Select the Name of the Key Pair you whant to use for EC2
 Conditions:
-	isLarge:
-		!Equals [!Ref EnvironmentSize, "LARGE"]
-	isntLarge:
-		!Not [!Equals [!Ref EnvironmentSize. "LARGE"]]
-	isRestore:
-		!Not [!Equals [!Ref SnapshotToRestore, ""]]
+  isLarge:
+    !Equals [!Ref EnvironmentSize, "LARGE"]
+  isntLarge:
+    !Not [!Equals [!Ref EnvironmentSize, "LARGE"]]
+  isRestore:
+    !Not [!Equals [!Ref SnapshotToRestore, ""]]
 Mappings:
-	RegionMap:
-        us-east-1:
-      			"UBUNTU" : "ami-3dec9947" # Ubuntu  2017
-    		us-east-2:
-      			"UBUNTU" : "ami-597d553c" # Ubuntu  2017
-    		us-west-1:
-      			"UBUNTU" : "ami-1a17137a" # Ubuntu  2017
-    		us-west-2:
-      			"UBUNTU" : "ami-a2e544da" # Ubuntu  2017
-    		ca-central-1:
-      			"UBUNTU" : "ami-b0c67cd4" # Ubuntu  2017
-    		eu-west-1:
-      			"UBUNTU" : "ami-63b0341a" # Ubuntu  2017
-        eu-central-1:
-      			"UBUNTU" : "ami-13b8337c" # Ubuntu  2017
-    		eu-west-2:
-      			"UBUNTU" : "ami-22415846" # Ubuntu  2017
-    		ap-southeast-1:
-      			"UBUNTU" : "ami-29aece55" # Ubuntu  2017
-    		ap-southeast-2:
-      			"UBUNTU" : "ami-9b8076f9" # Ubuntu  2017
-    		ap-northeast-2:
-      			"UBUNTU" : "ami-5027813e" # Ubuntu  2017
-    		ap-northeast-1:
-      			"UBUNTU" : "ami-42ca4724" # Ubuntu  2017
-    		ap-south-1:
-      			"UBUNTU" : "ami-84dc94eb" # Ubuntu  2017
-    		sa-east-1:
-      			"UBUNTU" : "ami-8181c7ed" # Ubuntu  2017
-	InstanceSize:
+  RegionMap:
+    us-east-1:
+      "UBUNTU" : "ami-3dec9947" # Ubuntu  2017
+    us-east-2:
+      "UBUNTU" : "ami-597d553c" # Ubuntu  2017
+    us-west-1:
+      "UBUNTU" : "ami-1a17137a" # Ubuntu  2017
+    us-west-2:
+      "UBUNTU" : "ami-a2e544da" # Ubuntu  2017
+    ca-central-1:
+      "UBUNTU" : "ami-b0c67cd4" # Ubuntu  2017
+    eu-west-1:
+      "UBUNTU" : "ami-63b0341a" # Ubuntu  2017
+    eu-central-1:
+      "UBUNTU" : "ami-13b8337c" # Ubuntu  2017
+    eu-west-2:
+      "UBUNTU" : "ami-22415846" # Ubuntu  2017
+    ap-southeast-1:
+      "UBUNTU" : "ami-29aece55" # Ubuntu  2017
+    ap-southeast-2:
+      "UBUNTU" : "ami-9b8076f9" # Ubuntu  2017
+    ap-northeast-2:
+      "UBUNTU" : "ami-5027813e" # Ubuntu  2017
+    ap-northeast-1:
+      "UBUNTU" : "ami-42ca4724" # Ubuntu  2017
+    ap-south-1:
+      "UBUNTU" : "ami-84dc94eb" # Ubuntu  2017
+    sa-east-1:
+      "UBUNTU" : "ami-8181c7ed" # Ubuntu  2017
+  InstanceSize:
     SMALL:
-			"EC2": "t2.micro"
-			"DB" : "db.t2.micro"
-		MEDIUM:
-			"EC2": "t2.small"
-			"DB" : "db.t2.small"
-		LARGE:
-			"EC2": "t2.medium"
-			"DB" : "db.r3.xlarge"
+      "EC2": "t2.micro"
+      "DB" : "db.t2.micro"
+    MEDIUM:
+      "EC2": "t2.small"
+      "DB" : "db.t2.small"
+    LARGE:
+      "EC2": "t2.medium"
+      "DB" : "db.r3.xlarge"
 Resources:
   EC2:
     Type: "AWS::EC2::Instance"
     DeletionPolicy: Delete
     Properties:
-	    ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", UBUNTU]
-	    InstanceType: !FindInMap [InstanceSize, !Ref EnvironmentSize, EC2]
-      KeyName: KeyName
+      ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", UBUNTU]
+      InstanceType: !FindInMap [InstanceSize, !Ref EnvironmentSize, EC2]
+      KeyName: !Ref KeyPair
       UserData:
         "Fn::Base64":
           !Sub |
@@ -100,7 +104,7 @@ Resources:
             sudo git checkout MOODLE_33_STABLE
             sudo cp -R /opt/moodle /var/www/html/
     CreationPolicy:
-       ResourcesSignal:
+       ResourceSignal:
         Count: "1"
         Timeout: PT15M
     Metadata:
@@ -173,7 +177,7 @@ Resources:
               command: "cp config-dist.php config.php"
             02_inject_dbhost:
               cwd: "/var/www/html/moodle"
-              command: !if
+              command: !If
                 - isntLarge
                 - !Sub |
                   sed -i 's/localhost/${DB.Endpoint.Address}/g' config.php
@@ -201,7 +205,7 @@ Resources:
             08_set_ipAddress:
               cwd: "/var/www/html/moodle"
               command: !Sub |
-                myip='cat ip.address' && sed -i 's/example.com/${myip}/g' config.php
+                myip=`cat ip.address` && echo "define('wwwroot', 'http://${!myip}/moodle');" >> config.php
   DB:
     Type: "AWS::RDS::DBInstance"
     Condition: isntLarge 
@@ -209,36 +213,33 @@ Resources:
     Properties:
        AllocatedStorage: 5
        StorageType: gp2
-       DBInstanceClass: !FinInMap [InstanceSize,!Ref EnvironmentSize, DB]
-       DBName: !if [isRestore, !Ref "AWS::NoValue", !Ref DatabaseName]
+       DBInstanceClass: !FindInMap [InstanceSize,!Ref EnvironmentSize, DB]
+       DBName: !If [isRestore, !Ref "AWS::NoValue", !Ref DatabaseName]
        Engine: MySQL
-       MasterUserName: !if [isRestore, !Ref "AWS::NoValue", !Ref DatabaseUser]
-       MasterUserPassword: !if [isRestore, !Ref "AWS::NoValue", !Ref DatabasePassword]
-       DBSnapshotIdentifier: !if [isRestore, !Ref SnapshotToRestore, !Ref "AWS::NoValue"]
+       MasterUsername: !If [isRestore, !Ref "AWS::NoValue", !Ref DatabaseUser]
+       MasterUserPassword: !If [isRestore, !Ref "AWS::NoValue", !Ref DatabasePassword]
+       DBSnapshotIdentifier: !If [isRestore, !Ref SnapshotToRestore, !Ref "AWS::NoValue"]
   DBAuroraCluster:
-	 Type: "AWS::RDS::DBCluster"
-	 DeletionPolicy: Snapshot
-	 Condition: isLarge
-	 Properties:
-		DataBaseName: !if [isRestore, !Ref "AWS::NoValue", !Ref DataBaseName]
-		Engine: Aurora
-		MasterUserName: !if [isRestore, !Ref "AWS::NoValue", !Ref DatabaseUser]
-		MasterUserPassword: !if [isRestore,!Ref "AWS::NoValue", !Ref DatabasePassword]
-		SnapshotIdentifier: !if [isRestore, !Ref "AWS::NoValue", !Ref SnapshotIdentifier]
+    Type: "AWS::RDS::DBCluster"
+    DeletionPolicy: Snapshot
+    Condition: isLarge
+    Properties:
+      DataBaseName: !If [isRestore, !Ref "AWS::NoValue", !Ref DatabaseName]
+      Engine: Aurora
+      MasterUsername: !If [isRestore, !Ref "AWS::NoValue", !Ref DatabaseUser]
+      MasterUserPassword: !If [isRestore,!Ref "AWS::NoValue", !Ref DatabasePassword]
+      SnapshotIdentifier: !If [isRestore, !Ref SnapshotToRestore, !Ref "AWS::NoValue"]
   DBAurora:
-	 Type: "AWS::RDS::DBInstance"
-	 Condition: isLarge
-	 Properties:
-		DBClusterIdentifier: !Ref DBAuroraCluster
-		Engine: aurora
-		DBInstanceClass: !FinInMap [InstanceSize, !Ref Environmentsize, DB]
+    Type: "AWS::RDS::DBInstance"
+    Condition: isLarge
+    Properties:
+      DBClusterIdentifier: !Ref DBAuroraCluster
+      Engine: aurora
+      DBInstanceClass: !FindInMap [InstanceSize, !Ref EnvironmentSize, DB]
   S3:
     Type: "AWS::S3::Bucket"
-    DeletionPolicy: Retain
+    DeletionPolicy: Delete
 Outputs:
   moodleroot:
     Description: Access URL for Moodle
     Value: !Join ["", ["http//", !GetAtt EC2.PublicIp, "/moodle"]]
-  moodleAdmin:
-    Description:
-    Value:
