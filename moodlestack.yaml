@@ -93,20 +93,21 @@ Resources:
         "Fn::Base64":
           !Sub |
             #!/bin/bash
-            sudo apt-get update -y aws-cfn-bootstrap
-            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2 --configsets moodle --region ${AWS::Region}
+            apt-get update
+            apt-get -y install python-pip
+            pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+            cp /usr/local/init/ubuntu/cfn-hup /etc/init.d/cfn-hup
+            chmod +x /etc/init.d/cfn-hup
+            update-rc.d cfn-hup defaults
+            service cfn-hup start
+            cfn-init -v --stack ${AWS::StackName} --resource EC2 --configsets moodle --region ${AWS::Region}
+            cfn-signal -e --stack ${AWS::StackName} --resource EC2 --region ${AWS::Region}
             sudo apt-get -y update
             sudo apt-get install -y git-core
-            cd /opt
-            sudo git clone git://git.moodle.org/moodle.git
-            cd moodle
-            sudo git branch --track MOODLE_33_STABLE origin/MOODLE_33_STABLE
-            sudo git checkout MOODLE_33_STABLE
-            sudo cp -R /opt/moodle /var/www/html/
     CreationPolicy:
        ResourceSignal:
         Count: "1"
-        Timeout: PT15M
+        Timeout: PT30M
     Metadata:
       AWS::CloudFormation::Init:
         configSets:
@@ -121,7 +122,7 @@ Resources:
                 [cfn-auto-reloader-hook]
                 triggers=post.update
                 path=Resources.EC2.Metadata.AWS::CloudFormation::Init
-                action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2 --configsets wordpress --region ${AWS::Region}
+                action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2 --configsets moodle --region ${AWS::Region}
               mode: "000400"
               owner: root
               group: root
@@ -145,7 +146,8 @@ Resources:
                   - "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
         install_moodle:
           packages:
-            sudo:
+            apt:
+              awscli: []
               apache2: []
               php: []
               mysql-server: []
@@ -166,7 +168,7 @@ Resources:
               ghostscript: []
               clamav: []
           services:
-            apache2: 
+            httpd: 
               enabled: "true"
               ensureRunning: "true"
         config_moodle:
