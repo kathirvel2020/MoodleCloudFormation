@@ -101,7 +101,7 @@ Resources:
             update-rc.d cfn-hup defaults
             service cfn-hup start
             cfn-init -v --stack ${AWS::StackName} --resource EC2 --configsets moodle --region ${AWS::Region}
-            cfn-signal -e --stack ${AWS::StackName} --resource EC2 --region ${AWS::Region}
+            cfn-signal -e $? --stack ${AWS::StackName} --resource EC2 --region ${AWS::Region}
             sudo apt-get -y update
             sudo apt-get install -y git-core
     CreationPolicy:
