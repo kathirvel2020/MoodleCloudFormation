@@ -116,6 +116,7 @@ Resources:
                 triggers=post.update
                 path=Resources.EC2.Metadata.AWS::CloudFormation::Init
                 action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2 --configsets moodle --region ${AWS::Region}
+                runas=root
               mode: "000400"
               owner: root
               group: root
