@@ -106,8 +106,8 @@ Resources:
       AWS::CloudFormation::Init:
         configSets:
           moodle:
-            -"config_cfn"
-            -"install_moodle"
+            - "config_cfn"
+            - "install_moodle"
         config_cfn:
           files:
             /etc/cfn/hooks.d/cfn-auto-reloader.conf:
