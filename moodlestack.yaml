@@ -102,8 +102,7 @@ Resources:
             service cfn-hup start
             cfn-init -v --stack ${AWS::StackName} --resource EC2 --configsets moodle --region ${AWS::Region}
             cfn-signal -e $? --stack ${AWS::StackName} --resource EC2 --region ${AWS::Region}
-            sudo apt-get -y update
-            sudo apt-get install -y git-core
+            apt-get -y update
     CreationPolicy:
        ResourceSignal:
         Count: "1"
@@ -147,67 +146,54 @@ Resources:
         install_moodle:
           packages:
             apt:
+              git: []
               awscli: []
-              apache2: []
               php: []
-              mysql-server: []
               mysql-client: []
-              php-mysql: []
-              php-pspell: []
-              php-curl: []
-              php-gd: []
-              php-intl: []
-              php-xml: []
-              php-xmlrpc: []
-              php-ldap: []
-              php-zip: []
-              php-soap: []
-              php-mbstring: []
+              libapache2-mod-php7.0: []
               graphviz: []
               aspell: []
               ghostscript: []
               clamav: []
+              php7.0-pspell: []
+              php7.0-curl: []
+              php7.0-gd: []
+              php7.0-intl: []
+              php7.0-mysql: []
+              php7.0-xml: []
+              php7.0-xmlrpc: []
+              php7.0-ldap: []
+              php7.0-zip: []
+              php7.0-soap: []
+              php7.0-mbstring: []
           services:
             httpd: 
               enabled: "true"
               ensureRunning: "true"
         config_moodle:
           commands:
-            01_clone_config:
+            01_get_moodle:
+              cwd: "/var/www/html"
+              command: "git clone git://git.moodle.org/moodle.git"
+            02_get_branch:
+              cwd: "/var/www/html/moodle"
+              command: "sudo git branch --track MOODLE_34_STABLE origin/MOODLE_34_STABLE"
+            03_checkout_branch:
+              cwd: "/var/www/html/moodle"
+              command: "sudo git checkout MOODLE_34_STABLE"
+            04_copy_config:
               cwd: "/var/www/html/moodle"
               test: "test ! -e /var/www/html/moodle/config.php"
-              command: "cp config-dist.php config.php"
-            02_inject_dbhost:
+              command: "sudo cp config-dist.php config.php"
+            05_inject_dbtype:
+              cwd: "/var/www/html/moodle"
+              command: !Sub |
+                sed -i 's/pgsql/mysqli/g' config.php
+            06_inject_dbhost:
               cwd: "/var/www/html/moodle"
               command: !If
                 - isntLarge
                 - !Sub |
-                  sed -i 's/localhost/${DB.Endpoint.Address}/g' config.php
-                - !Sub |
-                  sed -i 's/localhost/${DBAuroraCluster.Endpoint.Address}/g' config.php
-            03_inject_dbname:
-              cwd: "/var/www/html/moodle"
-              command: !Sub |
-                sed -i 's/moodle/${DatabaseName}/g' config.php
-            04_inject_dbuser:
-              cwd: "/var/www/html/moodle"
-              command: !Sub |
-                sed -i 's/username/${DatabaseUser}/g' config.php
-            05_inject_dbpassword:
-              cwd: "/var/www/html/moodle"
-              command: !Sub |
-                sed -i 's/password/${DatabasePassword}/g' config.php
-            06_set_dbtype:
-              cwd: "/var/www/html/moodle"
-              command: !Sub |
-                sed -i 's/pgsql/mysqli/g' config.php
-            07_get_public_ip:
-              cwd: "/var/www/html/moodle"
-              command: "curl http://169.254.169.254/latest/meta-data/public-ipv4 > ip.address"
-            08_set_ipAddress:
-              cwd: "/var/www/html/moodle"
-              command: !Sub |
-                myip=`cat ip.address` && echo "define('wwwroot', 'http://${!myip}/moodle');" >> config.php
   DB:
     Type: "AWS::RDS::DBInstance"
     Condition: isntLarge 
