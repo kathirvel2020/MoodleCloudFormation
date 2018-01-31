@@ -185,15 +185,48 @@ Resources:
               cwd: "/var/www/html/moodle"
               test: "test ! -e /var/www/html/moodle/config.php"
               command: "sudo cp config-dist.php config.php"
-            05_inject_dbtype:
+            05_create_moodledata:
+              cwd: "/var"
+              command: mkdir /var/moodledata
+            06_inject_dbtype:
               cwd: "/var/www/html/moodle"
               command: !Sub |
                 sed -i 's/pgsql/mysqli/g' config.php
-            06_inject_dbhost:
+            07_inject_dbhost:
               cwd: "/var/www/html/moodle"
               command: !If
                 - isntLarge
                 - !Sub |
+                  sed -i 's/localhost/${DB.Endpoint.Address}/g' config.php
+                - !Sub |
+                  sed -i 's/localhost/${DBAuroraCluster.Endpoint.Address}/g' config.php
+            08_injecting_dbname:
+              cwd: "/var/www/html/moodle"
+              command: !Sub  |
+                sed -i 's/moodle/${DatabaseName}/g' config.php
+            09_injecting_dbuser:
+              cwd: "/var/www/html/moodle"
+              command: !Sub |
+                sed -i 's/username/${DatabaseUser}/g' config.php
+            10_injecting_dbpassword:
+              cwd: "/var/www/html/moodle"
+              command: !Sub |
+                sed 's/password/${DatabasePassword}/g' config.php
+            11_get_instance_ip:
+              cwd: "/var/www/html/moodle"
+              command: "curl http://169.254.169.254/latest/meta-data/public-ipv4 > ip.address"
+            12_remove_cfgroot:
+              cwd: "/var/www/html/moodle"
+              command: !Sub |
+                sed 's/wwwroot/d' config.php
+            13_inject_wwroot:
+              cwd: "/var/www/html/moodle"
+              command: !Sub |
+                myip=`cat ip.address` && echo "$CFG->wwwroot = 'http://${!myip}/wordpress';" >> config.php
+            14_inject_dataroot:
+              cwd: "/var/www/html/moodle"
+              command: !Sub |
+                sed -i 's=/home/example/MoodleDBdata=/var/moodledata=g' config.php
   DB:
     Type: "AWS::RDS::DBInstance"
     Condition: isntLarge 
