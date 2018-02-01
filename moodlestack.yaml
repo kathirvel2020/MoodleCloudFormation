@@ -222,7 +222,7 @@ Resources:
             13_inject_wwroot:
               cwd: "/var/www/html/moodle"
               command: !Sub |
-                myip=`cat ip.address` && sed -i "87i \$CFG->wwwroot = 'http://$myip/wordpress';" config.php
+                myip=`cat ip.address` && sed -i "87i \$CFG->wwwroot = 'http://$myip/moodle';" config.php
             14_inject_dataroot:
               cwd: "/var/www/html/moodle"
               command: !Sub |
@@ -246,6 +246,7 @@ Resources:
        DBInstanceClass: !FindInMap [InstanceSize,!Ref EnvironmentSize, DB]
        DBName: !If [isRestore, !Ref "AWS::NoValue", !Ref DatabaseName]
        Engine: MySQL
+       EngineVersion: "5.7.17"
        MasterUsername: !If [isRestore, !Ref "AWS::NoValue", !Ref DatabaseUser]
        MasterUserPassword: !If [isRestore, !Ref "AWS::NoValue", !Ref DatabasePassword]
        DBSnapshotIdentifier: !If [isRestore, !Ref SnapshotToRestore, !Ref "AWS::NoValue"]
