@@ -211,7 +211,7 @@ Resources:
             10_injecting_dbpassword:
               cwd: "/var/www/html/moodle"
               command: !Sub |
-                sed 's/password/${DatabasePassword}/g' config.php
+                sed -i 's/password/${DatabasePassword}/g' config.php
             11_get_instance_ip:
               cwd: "/var/www/html/moodle"
               command: "curl http://169.254.169.254/latest/meta-data/public-ipv4 > ip.address"
