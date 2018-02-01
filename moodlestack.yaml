@@ -218,7 +218,7 @@ Resources:
             12_remove_cfgroot:
               cwd: "/var/www/html/moodle"
               command: !Sub |
-                sed -i '/$CFG->wwwwroot/d' config.php
+                sed -i '87d' config.php
             13_inject_wwroot:
               cwd: "/var/www/html/moodle"
               command: !Sub |
