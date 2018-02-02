@@ -172,6 +172,9 @@ Resources:
               ensureRunning: "true"
         config_moodle:
           commands:
+            00_reboot_apache:
+              cwd: "/opt"
+              command: "service apache2 restart"
             01_get_moodle:
               cwd: "/var/www/html"
               command: "git clone git://git.moodle.org/moodle.git"
